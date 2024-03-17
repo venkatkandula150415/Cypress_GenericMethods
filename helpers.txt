@@ -1,0 +1,359 @@
+import { JobStatus } from '../../src/Models';
+
+export enum DateFormatEnum {
+  YMD,
+  MDY,
+  WMDY,
+  DMY,
+  WDMY,
+}
+
+export enum TimeFormatEnum {
+  HMS,
+  HM,
+}
+
+export interface DateOptions {
+  dateFormat?: DateFormatEnum;
+  dateSeperator?: '/' | '.' | '-' | ' ';
+  month?: 'numeric' | '2-digit' | 'long' | 'short';
+  day?: 'numeric' | '2-digit';
+  weekday?: 'long' | 'short';
+  weekDaySeperator?: ', ' | ' ';
+  utcDate?: boolean;
+}
+
+export interface TimeOptions {
+  timeFormat?: TimeFormatEnum;
+  timeSeperator?: ':' | '.' | '-' | ' ';
+  hour?: 'numeric' | '2-digit';
+  minute?: 'numeric' | '2-digit';
+  second?: 'numeric' | '2-digit';
+  hour12?: boolean;
+  utcTime?: boolean;
+}
+
+// Convert Local Time to UTC Time
+export function localToUtc(date: Date): any {
+  return date ? new Date(date.getTime() + (date.getTimezoneOffset() * 60 * 1000)) : null;
+}
+
+// Convert UTC to Local Time
+export function utcToLocal(date: Date): any {
+  return date ? new Date(date.getTime() - (date.getTimezoneOffset() * 60 * 1000)) : null;
+}
+
+/**
+ * Gets a formatted Date.  Can be customized to any format. Defaults to 'MM/DD/YYYY'.
+ * Can be formatted in Local or UTC time.
+ */
+export function formatDate(
+  date: Date,
+  {
+    dateFormat = DateFormatEnum.MDY,
+    dateSeperator = '/',
+    month = '2-digit',
+    day = '2-digit',
+    weekday = 'long',
+    weekDaySeperator = ', ',
+    utcDate = true,
+  }: DateOptions = {},
+): string {
+  if (date) {
+    // The returned date string must be in UTC Time
+    const dateValue: Date = utcDate ? localToUtc(date) : date;
+
+    const monthNames: string[] = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'];
+
+    const weekdayNames: string[] = [
+      'Sunday',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday'];
+
+    const year = dateValue.getFullYear();
+
+    let monthString: any = null;
+    switch (month) {
+      case 'numeric':
+        monthString = (1 + dateValue.getMonth()).toString();
+        break;
+      case '2-digit':
+        monthString = (1 + dateValue.getMonth()).toString().padStart(2, '0');
+        break;
+      case 'long':
+        monthString = monthNames[dateValue.getMonth()];
+        break;
+      case 'short':
+        monthString = monthNames[dateValue.getMonth()].substring(0, 3);
+        break;
+      default:
+        monthString = (1 + dateValue.getMonth()).toString().padStart(2, '0');
+        break;
+    }
+
+    const dayString: string = day === '2-digit' ? dateValue.getDate().toString().padStart(2, '0') : dateValue.getDate().toString();
+    const weekdayString: string = weekday === 'long' ? weekdayNames[dateValue.getDay()] : weekdayNames[dateValue.getDay()].substring(0, 3);
+
+    switch (dateFormat) {
+      case DateFormatEnum.YMD:
+        return `${year}${dateSeperator}${monthString}${dateSeperator}${dayString}`;
+
+      case DateFormatEnum.DMY:
+        return `${dayString}${dateSeperator}${monthString}${dateSeperator}${year}`;
+
+      case DateFormatEnum.WDMY:
+        return `${weekdayString}${weekDaySeperator}${dayString}${dateSeperator}${monthString}${dateSeperator}${year}`;
+
+      case DateFormatEnum.MDY:
+        return `${monthString}${dateSeperator}${dayString}${dateSeperator}${year}`;
+
+      case DateFormatEnum.WMDY:
+        return `${weekdayString}${weekDaySeperator}${monthString}${dateSeperator}${dayString}${dateSeperator}${year}`;
+
+      default:
+        return '';
+    }
+  }
+
+  return '';
+}
+
+export function formatTime(
+  date: Date,
+  {
+    timeFormat = TimeFormatEnum.HMS,
+    timeSeperator = ':',
+    hour = '2-digit',
+    minute = '2-digit',
+    second = '2-digit',
+    hour12 = false,
+    utcTime = true,
+  }: TimeOptions = {},
+): string {
+  if (date) {
+    // The returned date string must be in UTC Time
+    const dateValue: Date = utcTime ? date : localToUtc(date);
+
+    let amPm = '';
+    let hoursValue: number = dateValue.getHours();
+
+    if (hour12) {
+      if (hoursValue >= 12) {
+        amPm = ' PM';
+      } else {
+        amPm = ' AM';
+      }
+
+      if (hoursValue > 12) {
+        hoursValue -= 12;
+      }
+    }
+
+    const hourString: string = hour === '2-digit' ? hoursValue.toString().padStart(2, '0') : hoursValue.toString();
+    const minuteString: string = minute === '2-digit'
+      ? dateValue.getMinutes().toString().padStart(2, '0') : dateValue.getMinutes().toString();
+    const secondString: string = second === '2-digit'
+      ? dateValue.getSeconds().toString().padStart(2, '0') : dateValue.getSeconds().toString();
+
+    switch (timeFormat) {
+      case TimeFormatEnum.HMS:
+        return `${hourString}${timeSeperator}${minuteString}${timeSeperator}${secondString}${amPm}`;
+
+      case TimeFormatEnum.HM:
+        return `${hourString}${timeSeperator}${minuteString}${amPm}`;
+
+      default:
+        return '';
+    }
+  }
+
+  return '';
+}
+
+export interface TaxCatFeatures {
+  clientSideVirusScanning: boolean;
+  serverSideVirusScanning: boolean;
+  downloadProductCategorizations: boolean;
+  apiVersion: string;
+};
+
+export const formatStatus = (status: JobStatus): string => {
+  switch (status) {
+    case JobStatus.CatalogSent:
+      return 'Catalog Sent';
+    case JobStatus.EditSent:
+      return 'Edit Sent';
+
+    default:
+      return status.toString();
+  }
+}
+
+export const getJobStep = (jobStatus: JobStatus): string => {
+  switch (jobStatus) {
+    case null:
+    case JobStatus.Waiting:
+      return 'Product Information';
+
+    case JobStatus.CatalogSent:
+
+    case JobStatus.Ready:
+    case JobStatus.Mapping:
+      return 'Categorize Products';
+
+    case JobStatus.Mapped:
+    case JobStatus.Edited:
+    case JobStatus.EditSent:
+      return 'Review Product Categorizations';
+
+    case JobStatus.Done:
+      return 'Download Product Categorizations';
+
+    case JobStatus.Cancelled:
+    case JobStatus.Error:
+      return '';
+
+    default:
+      return '';
+  }
+};
+
+export interface DecimalFormatOptions {
+  showThousandsSeperator?: boolean;
+  minimumIntegerDigits?: number;
+  numberDecimals?: number;
+}
+
+export function formatDecimal(
+  value: number | string,
+  {
+    showThousandsSeperator = true,
+    minimumIntegerDigits = 1,
+    numberDecimals = 0,
+  }: DecimalFormatOptions = {},
+): string {
+  // Null or Undefined Value
+  if ((value === null) || (value === undefined)) {
+    return '';
+  }
+
+  const numberValue = Number(value);
+
+  // Format the Number as a String using the Options
+  const stringValue = numberValue.toLocaleString('en', {
+    style: 'decimal',
+    useGrouping: showThousandsSeperator,
+    minimumIntegerDigits,
+    minimumFractionDigits: numberDecimals,
+    maximumFractionDigits: numberDecimals,
+  });
+
+  return stringValue;
+}
+
+export const renderPercentage = (value: number): string => {
+  return `${(value * 100).toFixed(2)} %`;
+};
+
+// Format a Date in the Locale Long Date / TimeFormat
+export function formatLongDateTimeLocale(date: Date) {
+  return formatDateTime(date, ' ', { dateFormat: DateFormatEnum.WMDY, month: 'short', dateSeperator: ' ', utcDate: false })
+};
+
+
+export function formatDateTime(
+  date: Date,
+  seperator = ' ',
+  {
+    dateFormat = DateFormatEnum.MDY,
+    dateSeperator = '/',
+    month = '2-digit',
+    day = '2-digit',
+    weekday = 'long',
+    weekDaySeperator = ', ',
+    utcDate = true,
+  }: DateOptions = {},
+  {
+    timeFormat = TimeFormatEnum.HMS,
+    timeSeperator = ':',
+    hour = '2-digit',
+    minute = '2-digit',
+    second = '2-digit',
+    hour12 = false,
+    utcTime = true,
+  }: TimeOptions = {},
+): string {
+  const dateString = formatDate(date, {
+    dateFormat,
+    dateSeperator,
+    month,
+    day,
+    weekday,
+    weekDaySeperator,
+    utcDate,
+  });
+  const timeString = formatTime(date, {
+    timeFormat,
+    timeSeperator,
+    hour,
+    minute,
+    second,
+    hour12,
+    utcTime,
+  });
+
+  return `${dateString}${seperator}${timeString}`;
+}
+
+export function hasDST(date = new Date()) {
+  const january = new Date(date.getFullYear(), 0, 1).getTimezoneOffset();
+  const july = new Date(date.getFullYear(), 6, 1).getTimezoneOffset();
+
+  return Math.max(january, july) !== date.getTimezoneOffset();
+}
+
+// The Locale Language used by the Certificate Center
+let ccLocaleLanguage: string = navigator?.language || 'en-US';
+
+// The Date / Time Options used by the Certificate Center - Force a 2 Digit Day and Month, 4 Digit Year
+const ccDateTimeOptions: Intl.DateTimeFormatOptions = { day: "2-digit", month: "2-digit", year: "numeric" };
+
+// Get the Locale Language of the Certificate Center
+export function getLocaleLanguage(): string {
+  return ccLocaleLanguage;
+};
+
+// Get the Locale Short Date Format for Certificate Center 
+export function getLocaleShortDateFormat(): string {
+  const date: Date = new Date(2020, 1, 1);
+  const formatter: Intl.DateTimeFormatPart[] = new Intl.DateTimeFormat(getLocaleLanguage(), ccDateTimeOptions).formatToParts(date);
+
+  return formatter.map(function (part: Intl.DateTimeFormatPart) {
+    switch (part.type) {
+      case 'month':
+        return part.value.length == 2 ? 'MM' : 'M';
+      case 'day':
+        return part.value.length == 2 ? 'dd' : 'd';
+      case 'year':
+        return part.value.length == 4 ? 'yyyy' : 'yy';
+      default:
+        return part.value;
+    };
+  }).join('');
+};
